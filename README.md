@@ -10,6 +10,7 @@ This project is aimed at centralizing sales data for a multinational company. Th
 - Working with Pandas, Requests, and Boto3
 - Working with postgres, a few AWS concepts 
 - WSL networking quirks (not recognising Windows + subsequent difficulties uploading to the local database)
+- Star based schemas and SQL
 ## Installation
 
 1. **Clone the repository:**
@@ -37,6 +38,9 @@ This project is aimed at centralizing sales data for a multinational company. Th
    - Extracts data from various sources (e.g., PDFs, APIs, S3)
    - Cleans and processes the data
    - Uploads cleaned data to a local database
+
+3. **Run database.sql**
+   Use your preferred database tool.
 
 ## File Structure
 

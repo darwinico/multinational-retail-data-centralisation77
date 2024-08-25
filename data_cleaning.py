@@ -4,13 +4,12 @@ import pycountry
 
 class DataCleaning:
     def clean_user_data(self, df: pd.DataFrame) -> pd.DataFrame:
-        df.dropna(subset=['first_name', 'last_name', 'email_address', 'join_date'], inplace=True)
-        df['date_of_birth'].fillna('1970-01-01', inplace=True)
         df['company'].fillna('Unknown', inplace=True)
-        df['date_of_birth'] = pd.to_datetime(df['date_of_birth'], errors='coerce').fillna(pd.to_datetime('1970-01-01'))
-        df['join_date'] = pd.to_datetime(df['join_date'], errors='coerce').fillna(pd.to_datetime('1970-01-01'))
+        df['date_of_birth'] = pd.to_datetime(df['date_of_birth'], errors='coerce')
+        df['join_date'] = pd.to_datetime(df['join_date'], errors='coerce')
         df['phone_number'] = df['phone_number'].astype(str)
         df['email_address'] = df['email_address'].apply(self.validate_email)
+        df['country_code'].replace({'GGB': 'GB'}, inplace=True)
         valid_country_codes = [country.alpha_2 for country in pycountry.countries]
         df = df[df['country_code'].isin(valid_country_codes)]
         return df
@@ -23,24 +22,11 @@ class DataCleaning:
             return 'invalid@example.com'
     
     def clean_card_data(self, df: pd.DataFrame) -> pd.DataFrame:
-        df.dropna(inplace=True)
         df['card_number'] = df['card_number'].astype(str)
         df['expiry_date'] = pd.to_datetime(df['expiry_date'], format='%m/%y', errors='coerce')
+        df.dropna(subset=['expiry_date'], inplace=True)
         df['date_payment_confirmed'] = pd.to_datetime(df['date_payment_confirmed'], errors='coerce')
-        df = df[df['date_payment_confirmed'] <= df['expiry_date']]
-        
-        def validate_card_number(row):
-            match = re.search(r'(\d+)\s?digit', row['card_provider'])
-            if match:
-                num_digits = int(match.group(1))
-                return len(row['card_number']) == num_digits
-            else:
-                return len(row['card_number']) == 16
-        
-        df = df[df.apply(validate_card_number, axis=1)]
-        
-        df.dropna(inplace=True)
-        
+        df['card_number'] = df['card_number'].str.replace('?', '', regex=False)
         return df
     
     def clean_store_data(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -48,19 +34,11 @@ class DataCleaning:
         df['longitude'] = pd.to_numeric(df['longitude'], errors='coerce').fillna(0)
         df['staff_numbers'] = pd.to_numeric(df['staff_numbers'], errors='coerce').fillna(0).astype(int)
         df['opening_date'] = pd.to_datetime(df['opening_date'], errors='coerce')
-        df.rename(columns={
-            'index': 'store_id',
-            'address': 'store_address',
-            'longitude': 'store_longitude',
-            'latitude': 'store_latitude',
-            'locality': 'store_locality',
-            'store_code': 'store_code',
-            'staff_numbers': 'number_of_staff',
-            'opening_date': 'date_opened',
-            'store_type': 'type_of_store',
-            'country_code': 'country',
-            'continent': 'continent'
-        }, inplace=True)
+        df.loc[df['country_code'].str.len() > 2, :] = None
+        df.dropna(subset=['country_code'], inplace=True)
+        df['continent'] = df['continent'].replace({
+            'eeAmerica': 'America',
+            'eeEurope': 'Europe',})
 
         return df
     
@@ -81,6 +59,9 @@ class DataCleaning:
                 elif 'ml' in weight:
                     unit = "ml"
                     divisor = 1000
+                elif 'oz' in weight:
+                    unit = "oz"
+                    divisor = 35.274
                 else:
                     return None  
             except ValueError:

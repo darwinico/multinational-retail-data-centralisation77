@@ -63,7 +63,7 @@ def extract_clean_orders(rds_db_connector, local_db_connector):
     cleaned_orders_df = data_cleaner.clean_orders_data(orders_df)
     print("Cleaned Orders Data:")
     print(cleaned_orders_df.head())
-    local_db_connector.upload_to_db(cleaned_orders_df, "dim_orders")
+    local_db_connector.upload_to_db(cleaned_orders_df, "orders_table")
     print("Orders data uploaded to the local database.")
 
 def extract_clean_upload_date_times(s3_link, local_db_connector):
